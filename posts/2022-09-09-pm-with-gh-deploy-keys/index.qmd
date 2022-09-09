@@ -1,0 +1,145 @@
+---
+title: Deploying a Private Git Repository to Package Manager with GitHub Deploy Keys
+date: 2022-09-09
+---
+
+A customer was having trouble deploying Git packages for R to Package Manager. This post demonstrates how to deploy an R package from a private GitHub repository to Package Manager using GitHub Deploy Keys.
+
+## Build the Docker Image
+
+We will use this Dockerfile as a starting point. It comes from <https://hub.docker.com/r/rstudio/rstudio-package-manager>.
+
+```bash
+FROM rstudio/rstudio-package-manager:bionic-2022.07.2-11 
+
+# Install R
+USER root
+RUN sudo apt-get update
+RUN sudo apt-get install -y gdebi-core
+ENV R_VERSION=4.1.3
+RUN curl -O https://cdn.rstudio.com/r/ubuntu-1804/pkgs/r-${R_VERSION}_1_amd64.deb
+RUN sudo gdebi -n r-${R_VERSION}_1_amd64.deb
+
+USER rstudio-pm
+```
+
+Build the docker image:
+
+```bash
+docker build -t package-manager .
+```
+
+Run the docker container:
+
+```bash
+export RSPM_LICENSE=XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX
+
+docker container run -it --privileged \
+    -p 4242:4242 \
+    -e RSPM_LICENSE=$RSPM_LICENSE \
+    package-manager
+```
+
+Verify that the container is running by opening <http://localhost:4242> to access RStudio Package Manager UI.
+
+![](./imgs/no-repos.png){fig-alt="Screen shot of Package Manager."}
+
+## Prompt in Container
+
+To create repositories you need to access the container directly and execute some commands. To do this find the container ID for RSPM:
+
+```bash
+docker ps
+# CONTAINER ID   IMAGE             COMMAND                  CREATED         STATUS         PORTS                    NAMES
+# 7781da3a7733   package-manager   "tini -- /usr/local/…"   5 minutes ago   Up 5 minutes   0.0.0.0:4242->4242/tcp   focused_boyd
+```
+
+Open a new terminal. Then use the container ID to enter the bash shell in the container.
+
+```bash
+docker exec -it 677e2ef65a60 /bin/bash
+```
+
+## Create a deploy key on GitHub
+
+For this blog post I will be using an R package I created called `baddadd`. You can find it on GitHub <https://github.com/SamEdwardes/badadd>. For this demonstration I temporarily made it a private repo.
+
+![](./imgs/gh-badadd.png){fig-alt="Screenshot of GitHub repo."}
+
+On the server where Package Manager is running create a new SSH key ([instructions from GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#generating-a-new-ssh-key)):
+
+```bash
+ssh-keygen -t ed25519 -C "edwardes.s@gmail.com"
+```
+
+You will get the following output.
+
+```bash
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/rstudio-pm/.ssh/id_ed25519):
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/rstudio-pm/.ssh/id_ed25519.
+Your public key has been saved in /home/rstudio-pm/.ssh/id_ed25519.pub.
+The key fingerprint is:
+SHA256:5ji7C/XD7Mb5geWHinQKr0R295LoMeo2qhiqW4AFHE8 edwardes.s@gmail.com
+The key's randomart image is:
++--[ED25519 256]--+
+|o..E             |
+| oo              |
+|  ..             |
+|..               |
+|o   o o S .      |
+| . o o X * .     |
+|. . + B.@.= .    |
+|oo .oB X++ o     |
+|Bo.++oO+o..      |
++----[SHA256]-----+
+```
+
+Then add you SSH key to the ssh-agent:
+
+:::{.callout-warning}
+Should we do this....
+:::
+
+```bash
+eval "$(ssh-agent -s)"
+echo -e "Host *\n  AddKeysToAgent yes\n  IdentityFile ~/.ssh/id_ed25519" > ~/.ssh/config
+ssh-add ~/.ssh/id_ed25519
+```
+
+Then add you SSH key to GitHub as a deploy key. Get the public key using:
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+Then copy and paste the results of that into your GitHub deploy key.
+
+![](./imgs/gh-deploy-key.png)
+
+## Add a new git builder
+
+Create a git source:
+
+```bash
+# Create a new source
+rspm create source --type=git --name=prod-internal-src
+
+# Add the ssh key to package manager
+rspm import ssh-key --name=baddadd-gh-deploy-key --path=/home/rstudio-pm/.ssh/id_ed25519
+
+rspm create git-builder \
+    --url=git@github.com:SamEdwardes/badadd.git \
+    --source=prod-internal-src \
+    --build-trigger=commits \
+    --credential=baddadd-gh-deploy-key
+
+rspm create repo --name=prod-git --description='Stable releases of our internal packages'
+rspm subscribe --source=prod-internal-src --repo=prod-git
+```
+
+Now visit <http://localhost:4242> and verify that the repo and package exist.
+
+![](./imgs/badadd-in-package-manager.png){fig-alt="Screenshot of badadd in Package Manager."}
