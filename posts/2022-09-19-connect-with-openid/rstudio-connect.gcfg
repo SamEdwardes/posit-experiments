@@ -1,0 +1,60 @@
+; RStudio Connect configuration file
+
+[Server]
+; SenderEmail is an email address used by RStudio Connect to send outbound
+; email. The system will not be able to send administrative email until this
+; setting is configured.
+;
+; SenderEmail = account@company.com
+
+; The persistent data directory mounted into our container.
+DataDir = /data
+
+; Address is a public URL for this RStudio Connect server. Must be configured
+; to enable features like including links to your content in emails. If
+; Connect is deployed behind an HTTP proxy, this should be the URL for Connect
+; in terms of that proxy.
+;
+; Address = https://rstudio-connect.company.com
+
+; Placeholder value. Please replace
+Address = http://localhost:3939
+
+[HTTP]
+; RStudio Connect will listen on this network address for HTTP connections.
+Listen = :3939
+
+[Authentication]
+Provider = "oauth2"
+
+[OAuth2]
+ClientId = "XXXX"
+ClientSecret = "XXX"
+OpenIDConnectIssuer = "https://samples.auth0.com/authorize"
+RequireUsernameClaim = true
+; Enable this for a better user experience, unless
+; managing a large number of groups is a concern:
+;GroupsAutoProvision = true
+
+; When attempting to troubleshoot a problem relating to OpenID Connect, 
+; you can enable more verbose logging by enabling the following line
+;Logging = true
+
+[Python]
+Enabled = true
+Executable = /opt/python/3.8.10/bin/python
+Executable = /opt/python/3.9.5/bin/python
+
+[RPackageRepository "CRAN"]
+URL = https://packagemanager.rstudio.com/cran/__linux__/bionic/latest
+
+[RPackageRepository "RSPM"]
+URL = https://packagemanager.rstudio.com/cran/__linux__/bionic/latest
+
+[Logging]
+Enabled = true
+ServiceLog = STDOUT
+ServiceLogFormat = TEXT    ; TEXT or JSON
+ServiceLogLevel = INFO     ; INFO, WARNING or ERROR
+AccessLog = STDOUT
+AccessLogFormat = COMMON   ; COMMON, COMBINED, or JSON

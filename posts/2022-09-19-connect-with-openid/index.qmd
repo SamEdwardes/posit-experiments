@@ -1,0 +1,13 @@
+---
+title: "Connect with Open ID"
+draft: true
+---
+
+
+```bash
+docker run -it --privileged \
+    -p 3939:3939 \
+    -e RSC_LICENSE=$RSC_LICENSE \
+    -v $PWD/rstudio-connect.gcfg:/etc/rstudio-connect/rstudio-connect.gcfg \
+    rstudio/rstudio-connect:bionic-2022.09.0
+```
