@@ -6,3 +6,7 @@ render:
 
 publish:
     quarto publish
+
+clean:
+    rm -rf _site
+    rm -rf .quarto
