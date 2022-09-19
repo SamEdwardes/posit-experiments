@@ -1,5 +1,5 @@
 ---
-title: "Posits"
+title: "Posit Experiments"
 subtitle: "A blog about Posit software"
 listing:
   contents: posts

@@ -2,14 +2,15 @@ project:
   type: website
 
 website:
-  title: "Posits"
+  title: "Posit Experiments"
+  favicon: images/favicon.ico
   navbar:
     right:
+      - text: Home
+        href: index.qmd
       - about.qmd
       - icon: github
-        href: https://github.com/SamEdwardes/posits-blog
-      - icon: twitter
-        href: https://twitter.com/TheReaLSamlam
+        href: https://github.com/SamEdwardes/posit-experiments
 format:
   html:
     theme: litera

@@ -1,0 +1,4 @@
+- source: project
+  quarto-pub:
+    - id: 0587eda5-5509-4020-a921-dd4b3a52a686
+      url: 'https://quartopub.com/sites/samedwardes/posit-experiments'
