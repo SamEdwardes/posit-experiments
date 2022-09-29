@@ -1,6 +1,10 @@
 ---
 title: "Connect with Open ID"
 draft: true
+author: Sam Edwardes
+date: 2022-09-19
+categories: 
+  - Connect
 ---
 
 

@@ -13,8 +13,6 @@ website:
         href: https://github.com/SamEdwardes/posit-experiments
 format:
   html:
-    theme: litera
-    css: styles.css
-
-
-
+    theme: 
+      - litera
+      - custom.scss

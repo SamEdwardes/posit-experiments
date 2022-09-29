@@ -1,15 +1,8 @@
 ---
-title: "Posit Experiments"
-subtitle: "A blog about Posit software"
 listing:
   contents: posts
   sort: "date desc"
-  type: default
   categories: true
-  sort-ui: false
-  filter-ui: false
-page-layout: full
-title-block-banner: true
+  # template: custom-blog-listing.ejs
+page-layout: article
 ---
-
-

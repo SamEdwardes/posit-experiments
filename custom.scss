@@ -1,0 +1,39 @@
+/*-- scss:rules --*/
+
+.code-output {
+    color: #adb1b2;
+    background-color: #F0F3F4;
+    font-style: italic;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+
+#quarto-document-content {
+    padding-top: 0rem;
+    .thumbnail {
+        display: none;
+        flex-basis: 0%;
+    }
+    .body {
+        flex-basis: 75%;
+    }
+    .metadata {
+        flex-basis: 25%;
+    }
+    .listing-description {
+        font-size: medium;
+    }
+    .listing-date {
+        font-size: medium;
+    }
+    .listing-description {
+        font-size: medium;
+    }
+}
+
+#quarto-margin-sidebar {
+    .category {
+        font-size: medium;
+    }
+}

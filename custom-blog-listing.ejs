@@ -1,0 +1,32 @@
+```{=html}
+<div id="blog-post-listing">
+  <% for (const item of items) { %>
+    <article>
+      <h3 class="no-anchor">
+        <a href="<%- item.path %>" class="blog-post-listing-title">
+          <%= item.title %>
+        </a>
+      </h3>
+      <div class="d-flex flex-row">
+        <div class="text-muted small me-2">
+          <%= item.date %>
+        </div>
+        <!--  -->
+        <% if (item.categories) { %> 
+          <div class="categories align-right">
+            <% for (const category of item.categories) { %>
+              <span class="category">
+                <%= category %>
+              </span>
+            <% } %>
+          </div>
+        <% } %> 
+      <!--  -->
+      </div>
+      <p>
+        <%= item.description %>
+      </p>
+    </article>
+  <% } %>
+</div>
+```

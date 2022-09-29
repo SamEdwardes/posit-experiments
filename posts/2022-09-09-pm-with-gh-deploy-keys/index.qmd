@@ -1,6 +1,10 @@
 ---
 title: Deploying a Private Git Repository to Package Manager with GitHub Deploy Keys
 date: 2022-09-09
+author: Sam Edwardes
+categories: 
+  - Package Manager
+  - AWS
 ---
 
 A customer was having trouble deploying Git packages for R to Package Manager. This post demonstrates how to deploy an R package from a private GitHub repository to Package Manager using GitHub Deploy Keys.
@@ -28,8 +32,11 @@ To create repositories you need to access the container directly and execute som
 
 ```bash
 docker ps
-# CONTAINER ID   IMAGE             COMMAND                  CREATED         STATUS         PORTS                    NAMES
-# 7781da3a7733   package-manager   "tini -- /usr/local/…"   5 minutes ago   Up 5 minutes   0.0.0.0:4242->4242/tcp   focused_boyd
+```
+
+```{.code-output}
+CONTAINER ID   IMAGE             COMMAND                  CREATED         STATUS         PORTS                    NAMES
+7781da3a7733   package-manager   "tini -- /usr/local/…"   5 minutes ago   Up 5 minutes   0.0.0.0:4242->4242/tcp   focused_boyd
 ```
 
 Open a new terminal. Then use the container ID to enter the bash shell in the container.

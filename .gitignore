@@ -1,2 +1,5 @@
 /.quarto/
 _site/
+_freeze/
+__pycache__
+venv

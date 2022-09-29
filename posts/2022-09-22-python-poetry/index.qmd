@@ -1,0 +1,591 @@
+---
+title: Using Poetry for Python Dependency Management
+author: "Sam Edwardes"
+format: html
+date: 2022-09-22
+categories: 
+  - Python
+---
+
+
+Poetry is a tool for Python packaging and dependency management. Check out the poetry docs here: [https://python-poetry.org](https://python-poetry.org). As a data scientist you can use poetry to create reproducible python environments for you and your team. The key features are:
+
+- A command line interface for declaring dependencies.
+- The ability to document development only dependencies in addition to production dependencies.
+- A lock file to record all dependencies and sub-dependencies.
+- Easily develop a package with built in package development features.
+
+## Usage
+
+### Installation
+
+To install poetry run the following command:
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+Follow the instructions from the terminal output to configure poetry. For example, if you are using *bash* you will need to add the following line to your *\~/.bashrc* file:
+
+
+```bash
+export PATH="$HOME/.poetry/bin:$PATH"
+```
+
+Restart your shell, and verify that poetry is working by checking the version:
+
+
+```bash
+poetry --version
+```
+
+### Create a new project
+
+Create a new empty directory for the project.
+
+
+
+```bash
+mkdir ~/my_app
+cd ~/my_app 
+```
+
+::: {.panel-tabset}
+
+## Poetry
+
+Use the `poetry init` command to setup poetry:
+
+```bash
+poetry init \
+    --no-interaction \
+    --name my_app \
+    --author "YourName <yourname@gmail.com>" \
+    --description "A hello world poetry example"
+```
+
+## Pip
+
+If using Pip you would run the following commands:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip wheel setuptools
+```
+
+:::
+
+:::{.callout-note collapse="true"}
+
+## More info on `poetry-init`
+
+The `poetry init` commands creates a *pyproject.toml* file. After running the above command your project structure will have only one file and look like this:
+
+```bash
+.
+└── pyproject.toml
+```
+
+```{.yaml filename="pyproject.toml"}
+[tool.poetry]
+name = "my_app"
+version = "0.1.0"
+description = "A hello world poetry example"
+authors = ["YourName <yourname@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+```
+
+*pyproject.toml* is a special file that poetry uses to store project configuration data. It is not specific to poetry, other tools can also store information in *pyproject.toml* (read [PEP 621](https://peps.python.org/pep-0621/) to learn more). The `tool.poetry` section of the *pyproject.toml* file is where the poetry specific meta-data is stored (<https://python-poetry.org/docs/pyproject/>). As you will learn in the upcoming sections *pyproject.toml* will automatically be updated by poetry as we add and remove dependencies.
+
+:::
+
+### Manage dependencies
+
+Poetry comes with a suite of commands that you can use to manage your dependencies without ever touching *pyproject.toml* by hand. The main commands include:
+
+-   `poetry add`: declare a new dependency.
+-   `poetry remove`: remove a dependency.
+-   `poetry run`: run a command inside the poetry virtual environment.
+-   `poetry export`: export the project dependencies into another format.
+
+#### Add a dependency
+
+##### Package dependency
+
+Add the [requests](https://docs.python-requests.org/en/latest/) package as a dependency.
+
+
+::: {.panel-tabset}
+
+## Poetry
+
+To add a dependency you can use the `poetry add` command.
+
+```bash
+poetry add requests
+```
+
+Running `poetry add <PACKAGE_NAME>` will achieve several things:
+
+- poetry will install requests into a virtual environment.
+- poetry will make note of requests as a dependency in *pyproject.toml*.
+- poetry will make note of the version of requests used, as well as of the requests dependencies in *poetry.lock*
+
+:::{.callout-tip}
+You can think of `poetry add <PACKAGE_NAME>` as being equivalent to `pip install <PACKAGE_NAME>`. One of the benefits of using `poetry add <PACKAGE_NAME>` is that the requirement will be documented in our *pyproject.toml*, where as with *pip* the requirement is not documented in any configuration file.
+:::
+
+## Pip
+
+To document the packages we require we will use a requirements.txt file and install from there.
+
+```{.bash filename="requirements.txt"}
+requests
+```
+
+Then run:
+
+```bash
+pip install -r requirements.txt
+```
+
+:::
+
+##### Development dependency
+
+A development dependency is a package that is only required by the package developers. For example we may want to use a code formatter, but there is no reason for the code formatter to be installed when the end user installs the package. Lets install [black](https://black.readthedocs.io/en/stable/) as our code formatter.
+
+:::{.panel-tabset}
+
+## Poetry
+
+```bash
+poetry add --group dev black
+```
+
+The output will look very similar, but note the use of the `--group dev` option. This tells poetry that this is a "development only" dependency. This means that the app does not need black to work, but we want all of the developers who are working on the app to have black installed so that code is formatted consistently.
+
+## Pip
+
+Pip has no official way of adding dev dependencies. A common convention would be to use a requirements-dev.txt file.
+
+```{.bash filename="requirements-dev.txt"}
+black
+```
+
+Then run:
+
+```bash
+pip install -r requirements-dev.txt
+```
+:::
+
+We have now installed two packages: requests and black. Lets take a look and see how our dependencies have been documented.
+
+:::{.panel-tabset}
+
+## Poetry
+
+```bash
+.
+├── poetry.lock
+└── pyproject.toml
+```
+
+**pyproject.toml**
+
+Includes the "top-level" dependencies that we defined with `poetry add`.
+
+```{.toml filename="pyproject.toml"}
+[tool.poetry]
+name = "my-app"
+version = "0.1.0"
+description = "A hello world poetry example"
+authors = ["YourName <yourname@gmail.com>"]
+readme = "README.md"
+packages = [{include = "my_app"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+requests = "^2.28.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+```
+
+**poetry.lock**
+
+Include the "top-level" dependencies that we defined with `poetry add`  **plus** all of the dependencies of those packages. The example below is only a preview of the first several lines.
+
+```{.toml filename="poetry.lock"}
+[[package]]
+name = "black"
+version = "22.8.0"
+description = "The uncompromising code formatter."
+category = "dev"
+optional = false
+python-versions = ">=3.6.2"
+
+[package.dependencies]
+click = ">=8.0.0"
+mypy-extensions = ">=0.4.3"
+pathspec = ">=0.9.0"
+platformdirs = ">=2"
+tomli = {version = ">=1.1.0", markers = "python_full_version < \"3.11.0a7\""}
+typing-extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
+
+...
+```
+
+## Pip
+
+```bash
+.
+├── requirements-dev.txt
+└── requirements.txt
+```
+
+**requirements.txt**
+
+```{.bash filename="requirements.txt"}
+requests
+```
+
+**requirements-dev.txt**
+
+```{.bash filename="requirements-dev.txt"}
+black
+```
+
+If we want to see the dependencies of our dependencies you can use the `pip list` command.
+
+```bash
+pip list
+Package            Version
+------------------ ---------
+black              22.8.0
+certifi            2022.9.14
+charset-normalizer 2.1.1
+click              8.1.3
+idna               3.4
+mypy-extensions    0.4.3
+pathspec           0.10.1
+pip                22.2.2
+platformdirs       2.5.2
+requests           2.28.1
+setuptools         65.3.0
+tomli              2.0.1
+urllib3            1.26.12
+wheel              0.37.1
+```
+
+:::
+
+#### Remove a dependency
+
+This is where Poetry really shines!
+
+After a few weeks of development the team has decided that they do not want to use the black code formatter anymore. Instead, everyone has agreed on [autopep8](%22https://github.com/hhatto/autopep8%22).
+
+First we need to remove black:
+
+:::{.panel-tabset}
+
+## Poetry
+
+```bash
+poetry remove --group dev black
+```
+
+This command will remove black, **and** it will also remove all of black's dependencies that we no longer need. Then, lets add autopep8 as a dependency:
+
+```bash
+poetry add --group dev autopep8
+```
+
+**pyproject.toml** and **poetry.lock** will automatically be updated!
+
+## Pip
+
+Use `pip uninstall` to remove a dependency.
+
+```bash
+pip uninstall black
+```
+
+However... this command will only remove black. It will not remove black's dependencies such as `click`, `tomli`, and others. My virtual environment now includes a bunch of dependencies that I am not using!
+
+```bash
+pip list
+Package            Version
+------------------ ---------
+certifi            2022.9.14
+charset-normalizer 2.1.1
+click              8.1.3
+idna               3.4
+mypy-extensions    0.4.3
+pathspec           0.10.1
+pip                22.2.2
+platformdirs       2.5.2
+requests           2.28.1
+setuptools         65.3.0
+tomli              2.0.1
+urllib3            1.26.12
+wheel              0.37.1
+```
+
+And then remember to update your `requirements-dev.txt`:
+
+```{.bash filename="requirements-dev.txt"}
+autopep 8
+```
+
+And install autopep 8:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+:::{.callout-tip}
+If you want to have a virtual environment that actually reflects your current requirements you will need to recreate one.
+
+```bash
+deactivate
+rm -r .venv
+python -m venv .venv
+python -m pip install --upgrade pip wheel setuptools
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+:::
+
+:::
+
+### Run your code
+
+:::{.panel-tabset}
+
+## Poetry
+
+When using Poetry you run you code by prefixing all commands with `poetry run`. This runs your code inside the virtual environment that poetry created. You do not need to remember or worry about activating and deactivating virtual environments.
+
+```bash
+poetry run python hello-world.py
+```
+
+:::{.callout-note collapse="true"}
+
+## Other ways to use the poetry virtual environment
+
+If using **VS code** you can set the poetry virtual environment as your interpreter. VS Code will then automatically activate the virtual environment. You can then choose to not prefix your commands with `poetry run`.
+
+Additionally, if you want to avoid prefixing all of your commands with `poetry run` you can use the `poetry shell` command. Check out the poetry docs for more details: <https://python-poetry.org/docs/cli/#shell>.
+:::
+
+:::{.callout-note collapse="true"}
+
+## More info about `poetry run`
+
+Under the hood poetry uses virtual environments to isolate your projects dependencies. Every time we call `poetry add` or `poetry remove` we are modifying that virtual environment. In order to run a command **inside** the virtual environment we use the command `poetry run`.
+
+If you invoke `python` as you normally would it uses the default python interpreter for your system.
+
+```bash
+which python
+/Users/samedwardes/.pyenv/shims/python
+```
+
+In order to use the virtual environment created by poetry you need to prefix your commands with `poetry run`.
+
+``` bash
+poetry run which python
+/Users/samedwardes/Library/Caches/pypoetry/virtualenvs/my-app-SAojqYOg-py3.9/bin/python
+```
+
+Note the difference above. When we prefix our command with `poetry run` we run our command inside the virtual environment. When we do not prefix the command with `poetry run` the virtual environment is not used.    
+
+:::
+
+## Pip
+
+Pip has no special commands for running code. However, it is important to remember to make sure you have activated your virtual environment before running code.
+
+```bash
+python hello-world.py
+```
+
+:::
+
+## FAQ
+
+### How do I publish to RStudio Connect?
+
+Some tools like RStudio Connect require a requirements.txt file and do not know how to use files like pyproject.toml or poetry.lock. Luckily Poetry includes commands to programmatically create a requirements.txt that can be consumed by other tools.
+
+```bash
+poetry export --without-hashes --output requirements.txt
+```
+
+### How do you collaborate with others when using poetry?
+
+So far you have created a new project, and used poetry to document your dependencies. Your app is getting a lot of traction and you want to implement some new features. To help with the backlog you will need to on-board a new colleague.
+
+**How can you ensure that you and your colleague are using identical environments?**
+
+There are two key things your colleague will need:
+
+-   *poetry.lock*
+-   *pyproject.toml*
+
+With these two files anyone will be able to reproduce your environment.
+
+:::{.callout-tip}
+Both *poetry.lock* and *pyrpoject.toml* should be checked into version control (e.g. GitHub).
+:::
+
+When your colleague is ready to start working on the project here is what they will need to do:
+
+```bash
+git clone <REPO>
+cd <REPO>
+poetry install
+```
+
+That is it 🎉! Your colleague will now be able to run the code using the `poetry run` command. They can also make changes to the environment with `poetry add` and `poetry remove`!
+
+### How do I specify the source of my packages?
+
+By default poetry is configured to use the *PyPI* repository (<https://pypi.org>). However, poetry does support the use of alternate repositories as well. Lets add [*RStudio Package Manager*](https://www.rstudio.com/products/package-manager/) as an alternate. To do this you need to update *pyproject.toml* by hand:
+
+```toml
+[[tool.poetry.source]]
+name = "rspm"
+url = "https://colorado.rstudio.com/rspm/pypi/latest/simple"
+```
+
+Now when you run `poetry add` or `poetry install` poetry will check both *Rstudio Package Manager* and *PyPi*.
+
+:::{.callout-tip}
+Any custom repository will have precedence over PyPI. If you still want PyPI to be your primary source for your packages you can declare custom repositories as secondary.
+
+```toml
+[[tool.poetry.source]]
+name = "rspm"
+url = "https://colorado.rstudio.com/rspm/pypi/latest/simple"
+secondary = true
+```
+
+If you want to disable *PyPi* so that only *RStudio Package Manager* is used you can use the `default` keyword.
+
+```toml
+[[tool.poetry.source]]
+name = "rspm"
+url = "https://colorado.rstudio.com/rspm/pypi/latest/simple"
+default = true
+```
+:::
+
+### How do I update dependencies?
+
+Overtime you may want to update your dependencies. For example one day [*pandas*](https://pandas.pydata.org) version 2.0 may be released and you will want to update to the latest and greatest.
+
+To update *pandas* only run:
+
+:::{.panel-tabset}
+
+## Poetry
+
+```bash
+poetry update pandas
+```
+
+## Pip
+
+```bash
+pip install --upgrade pandas
+```
+
+:::
+
+To update all dependencies in your project run:
+
+:::{.panel-tabset}
+
+## Poetry
+
+```bash
+poetry update
+```
+
+## Pip
+
+Pip has not out of the box way of doing this 😢
+
+:::
+
+### How do I specify which version of a package I want to use?
+
+You can specify a specific package version in `poetry add` by using the `==` operator. For example:
+
+```bash
+poetry add urllib3==1.26.0
+```
+
+Read more about constraining package versions here: <https://python-poetry.org/docs/cli/#add>.
+
+### How do I switch the version of Python I want to use?
+
+By default poetry will create a virtual environment using your current *python* environment. You can change which version of *python* poetry is using with the `poetry env use` command.
+
+Here is an example of how I would use *Python* version *3.10.1*:
+
+
+```bash
+poetry env use ~/.pyenv/versions/3.10.1/bin/python
+```
+
+We can validate that this worked by checking the python version:
+
+
+```bash
+poetry run python --version
+Python 3.10.1
+```
+
+I can always change my *Python* version later by running the command again. For example lets downgrade to *Python 3.9.10*:
+
+
+```bash
+poetry env use ~/.pyenv/versions/3.9.10/bin/python
+poetry run python --version
+Python 3.9.10
+```
+
+### What should I check into version control?
+
+There are two files you should check into version control:
+
+- *poetry.lock*
+- *pyproject.toml*
+
+### How do I create a *requirements.txt* file?
+
+Use the `poetry export` command:
+
+```bash
+poetry export --without-hashes --output requirements.txt
+```
